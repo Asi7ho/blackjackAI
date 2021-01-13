@@ -1,9 +1,7 @@
 # Import libraries
 
 import os
-import pickle
 import random
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -71,7 +69,6 @@ class Dqn():
         self.last_reward = 0
         self.last_vicDealer = 0
         self.last_vicPlayer = 0
-        self.last_aiScore = 0
 
     def select_action(self, state):
         probs = F.softmax(self.model(state) * 50, dim=1)
@@ -120,11 +117,11 @@ class Dqn():
                     "optimizer": self.optimizer.state_dict(),
                     "vicDealer": vicDealer,
                     "vicPlayer": vicPlayer,
-                    "reward_window": self.reward_window}, "last_brain.txt")
+                    "reward_window": self.reward_window}, "last_brain.pth")
 
     def load(self):
-        if (os.path.isfile("last_brain.txt")):
-            checkpoint = torch.load("last_brain.txt")
+        if (os.path.isfile("last_brain.pth")):
+            checkpoint = torch.load("last_brain.pth")
             self.model.load_state_dict(checkpoint["state_dict"])
             self.optimizer.load_state_dict(checkpoint["optimizer"])
             self.last_vicDealer = checkpoint["vicDealer"]

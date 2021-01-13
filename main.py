@@ -6,7 +6,6 @@ from game import Game
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
-import time
 
 WINDOW_WIDTH = 1136
 WINDOW_HEIGHT = 850
