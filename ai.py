@@ -1,6 +1,7 @@
 # Import libraries
 
 import os
+import pickle
 import random
 import numpy as np
 import torch
@@ -20,15 +21,21 @@ class Network(nn.Module):
         self.input_size = input_size
         self.num_action = num_action
 
-        self.fc1 = nn.Linear(input_size, 128)
-        self.fc2 = nn.Linear(128, num_action)
+        self.fc1 = nn.Linear(input_size, 64)
+        self.fc2 = nn.Linear(64, 32)
+        self.fc3 = nn.Linear(32, 16)
+        self.fc4 = nn.Linear(16, num_action)
 
     def forward(self, state):
         x = self.fc1(state)
         x = F.relu(x)
-        q = self.fc2(x)
+        x = self.fc2(x)
+        x = F.relu(x)
+        x = self.fc3(x)
+        x = F.relu(x)
+        x = self.fc4(x)
 
-        return q
+        return x
 
 
 # Experience Replay
@@ -55,16 +62,19 @@ class ReplayMemory(object):
 class Dqn():
     def __init__(self, input_size, num_action, gamma):
         self.model = Network(input_size, num_action)
-        self.memory = ReplayMemory(100000)
+        self.memory = ReplayMemory(100)
         self.gamma = gamma
         self.reward_window = []
-        self.optimizer = optim.Adam(self.model.parameters(), lr=1e-3)
+        self.optimizer = optim.Adam(self.model.parameters(), lr=1e-2)
         self.last_state = torch.Tensor(input_size).unsqueeze(0)
         self.last_action = 0
         self.last_reward = 0
+        self.last_vicDealer = 0
+        self.last_vicPlayer = 0
+        self.last_aiScore = 0
 
     def select_action(self, state):
-        probs = F.softmax(self.model(state) * 75, dim=1)
+        probs = F.softmax(self.model(state) * 50, dim=1)
         action = probs.multinomial(num_samples=1)
 
         return action.data[0, 0]
@@ -105,16 +115,20 @@ class Dqn():
     def score(self):
         return sum(self.reward_window) / (len(self.reward_window) + 1e-8)
 
-    def save(self):
+    def save(self, vicDealer, vicPlayer):
         torch.save({"state_dict": self.model.state_dict(),
-                    "optimizer": self.optimizer.state_dict()}, "last_brain.pth")
+                    "optimizer": self.optimizer.state_dict(),
+                    "vicDealer": vicDealer,
+                    "vicPlayer": vicPlayer,
+                    "reward_window": self.reward_window}, "last_brain.txt")
 
     def load(self):
-        if (os.path.isfile("last_brain.pth")):
-            print("Loading checkpoint...")
-            checkpoint = torch.load("last_brain.pth")
+        if (os.path.isfile("last_brain.txt")):
+            checkpoint = torch.load("last_brain.txt")
             self.model.load_state_dict(checkpoint["state_dict"])
             self.optimizer.load_state_dict(checkpoint["optimizer"])
-            print("Done!")
+            self.last_vicDealer = checkpoint["vicDealer"]
+            self.last_vicPlayer = checkpoint["vicPlayer"]
+            self.reward_window = checkpoint["reward_window"]
         else:
             print("File does not exist")

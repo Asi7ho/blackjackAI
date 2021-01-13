@@ -43,6 +43,8 @@ class Game:
         self.scores['player'] += 1
 
     def dealerTurn(self):
+        if (len(self.deck) == 0):
+            self.resetDeck()
         card = self.deck.pop(0)
         self.dealerHand.addCard(card)
 
@@ -54,3 +56,19 @@ class Game:
 
     def saveGameScore(self):
         saveScores(self.scores)
+
+    def encodeDeck(self):
+        code = [0] * 52
+        for card in self.deck:
+            if card.figure == "p":
+                fig = 0
+            elif card.figure == "t":
+                fig = 1
+            elif card.figure == "c":
+                fig = 2
+            else:
+                fig = 3
+
+            code[4 * (card.rank-1) + fig] = 1
+
+        return code
