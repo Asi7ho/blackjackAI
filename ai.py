@@ -19,19 +19,16 @@ class Network(nn.Module):
         self.input_size = input_size
         self.num_action = num_action
 
-        self.fc1 = nn.Linear(input_size, 64)
-        self.fc2 = nn.Linear(64, 32)
-        self.fc3 = nn.Linear(32, 16)
-        self.fc4 = nn.Linear(16, num_action)
+        self.fc1 = nn.Linear(input_size, 32)
+        self.fc2 = nn.Linear(32, 32)
+        self.fc3 = nn.Linear(32, num_action)
 
     def forward(self, state):
         x = self.fc1(state)
-        x = F.relu(x)
+        x = F.sigmoid(x)
         x = self.fc2(x)
-        x = F.relu(x)
+        x = F.sigmoid(x)
         x = self.fc3(x)
-        x = F.relu(x)
-        x = self.fc4(x)
 
         return x
 
@@ -60,7 +57,7 @@ class ReplayMemory(object):
 class Dqn():
     def __init__(self, input_size, num_action, gamma):
         self.model = Network(input_size, num_action)
-        self.memory = ReplayMemory(100)
+        self.memory = ReplayMemory(10)
         self.gamma = gamma
         self.reward_window = []
         self.optimizer = optim.Adam(self.model.parameters(), lr=1e-2)
@@ -71,7 +68,7 @@ class Dqn():
         self.last_vicPlayer = 0
 
     def select_action(self, state):
-        probs = F.softmax(self.model(state) * 50, dim=1)
+        probs = F.softmax(self.model(state) * 10, dim=1)
         action = probs.multinomial(num_samples=1)
 
         return action.data[0, 0]
@@ -81,7 +78,7 @@ class Dqn():
             1, batch_action.unsqueeze(1)).squeeze(1)
         next_outputs = self.model(batch_next_state).detach().max(1)[0]
         targets = batch_reward + self.gamma * next_outputs  # Bellman equation
-        td_loss = F.smooth_l1_loss(outputs, targets)
+        td_loss = F.mse_loss(outputs, targets)
 
         self.optimizer.zero_grad()
         td_loss.backward()
