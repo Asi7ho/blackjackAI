@@ -21,7 +21,7 @@ class Hand:
             if card.getRank() == 1 and handValue + 10 <= 21:
                 handValue += 10
 
-        return(handValue)
+        return handValue
 
     def addCard(self, card):
         self.hand.append(card)
